@@ -1,0 +1,225 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #0a0a0f;
+  color: #e5e5e5;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #12121a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #8b5cf6 0%, #06b6d4 100%);
+}
+
+/* Gradient Text */
+.gradient-text {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Gradient Border */
+.gradient-border {
+  position: relative;
+  background: #12121a;
+  border-radius: 16px;
+}
+
+.gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Glass Effect */
+.glass {
+  background: rgba(18, 18, 26, 0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+/* Glow Effects */
+.glow {
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+.glow-hover:hover {
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+}
+
+/* Button Styles */
+.btn-primary {
+  @apply px-6 py-3 bg-gradient-to-r from-accent-primary via-accent-secondary to-accent-tertiary 
+         rounded-xl font-semibold text-white transition-all duration-300 
+         hover:shadow-glow hover:scale-105 active:scale-95;
+}
+
+.btn-secondary {
+  @apply px-6 py-3 bg-dark-600 border border-dark-400 rounded-xl font-medium 
+         text-gray-300 transition-all duration-300 hover:border-accent-primary 
+         hover:text-white hover:bg-dark-500;
+}
+
+.btn-ghost {
+  @apply px-4 py-2 bg-transparent rounded-lg font-medium text-gray-400 
+         transition-all duration-300 hover:text-white hover:bg-dark-600;
+}
+
+/* Card Styles */
+.card {
+  @apply bg-dark-800 border border-dark-600 rounded-2xl p-6 
+         transition-all duration-300 hover:border-dark-400;
+}
+
+.card-interactive {
+  @apply card hover:border-accent-primary/50 hover:shadow-glow cursor-pointer;
+}
+
+/* Input Styles */
+.input {
+  @apply w-full px-4 py-3 bg-dark-700 border border-dark-500 rounded-xl 
+         text-white placeholder-gray-500 transition-all duration-300
+         focus:outline-none focus:border-accent-primary focus:ring-2 
+         focus:ring-accent-primary/20;
+}
+
+.input-label {
+  @apply block text-sm font-medium text-gray-400 mb-2;
+}
+
+/* Badge Styles */
+.badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+}
+
+.badge-primary {
+  @apply badge bg-accent-primary/20 text-accent-primary;
+}
+
+.badge-success {
+  @apply badge bg-accent-success/20 text-accent-success;
+}
+
+.badge-warning {
+  @apply badge bg-accent-warning/20 text-accent-warning;
+}
+
+.badge-danger {
+  @apply badge bg-accent-danger/20 text-accent-danger;
+}
+
+/* Skill Level Progress */
+.skill-bar {
+  @apply h-2 rounded-full bg-dark-600 overflow-hidden;
+}
+
+.skill-bar-fill {
+  @apply h-full rounded-full transition-all duration-500;
+  background: linear-gradient(90deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+}
+
+/* Animation Classes */
+.animate-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+
+/* Pulse Animation for Scores */
+.score-pulse {
+  animation: scorePulse 2s ease-in-out infinite;
+}
+
+@keyframes scorePulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Background Grid Pattern */
+.bg-grid {
+  background-image: 
+    linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Profile Avatar */
+.avatar-ring {
+  @apply relative rounded-full;
+}
+
+.avatar-ring::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #06b6d4 100%);
+  z-index: -1;
+}
+
+/* Timeline */
+.timeline-dot {
+  @apply w-4 h-4 rounded-full bg-gradient-to-r from-accent-primary to-accent-secondary 
+         border-4 border-dark-800 shadow-glow;
+}
+
+.timeline-line {
+  @apply w-0.5 bg-gradient-to-b from-accent-primary via-accent-secondary to-transparent;
+}
