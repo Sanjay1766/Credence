@@ -167,6 +167,7 @@ export async function fetchGitHubProfile(username: string): Promise<GitHubProfil
   return {
     username: userData.login,
     avatarUrl: userData.avatar_url,
+    bio: userData.bio || undefined,
     publicRepos: userData.public_repos,
     followers: userData.followers,
     following: userData.following,

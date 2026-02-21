@@ -19,14 +19,28 @@ import {
   Users,
   Loader2,
   Brain,
-  BarChart3,
   FolderGit2,
   AlertCircle,
   Search,
   Key,
+  Sparkles,
+  Target,
+  TrendingUp,
+  Award,
 } from 'lucide-react';
-import { GitHubProfile, GitHubRepository } from '../types';
 import { fetchGitHubProfile, setGitHubToken, getGitHubToken } from '../services/githubService';
+import { groqService } from '../services/groqService';
+
+interface GitHubAIAnalysis {
+  developerLevel: string;
+  primarySkills: string[];
+  projectComplexity: string;
+  collaborationScore: number;
+  openSourceContribution: string;
+  portfolioStrength: string;
+  recommendations: string[];
+  hiringInsights: string;
+}
 
 export default function GitHubConnect() {
   const { state, dispatch } = useApp();
@@ -36,6 +50,8 @@ export default function GitHubConnect() {
   const [token, setToken] = useState(getGitHubToken() || '');
   const [showToken, setShowToken] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [aiAnalysis, setAiAnalysis] = useState<GitHubAIAnalysis | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const handleConnect = async () => {
     if (!username.trim()) {
@@ -54,6 +70,31 @@ export default function GitHubConnect() {
     try {
       const profile = await fetchGitHubProfile(username.trim());
       dispatch({ type: 'SET_GITHUB_PROFILE', payload: profile });
+
+      // Trigger AI analysis
+      setIsAnalyzing(true);
+      try {
+        const analysis = await groqService.analyzeGitHubProfile({
+          username: profile.username,
+          publicRepos: profile.publicRepos,
+          followers: profile.followers,
+          following: profile.following,
+          bio: profile.bio || '',
+          repositories: profile.repositories.map(r => ({
+            name: r.name,
+            description: r.description,
+            language: r.language,
+            stars: r.stars,
+            forks: r.forks,
+            topics: []
+          }))
+        });
+        setAiAnalysis(analysis);
+      } catch (analysisError) {
+        console.error('AI analysis failed:', analysisError);
+      } finally {
+        setIsAnalyzing(false);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect to GitHub');
     } finally {
@@ -389,23 +430,105 @@ export default function GitHubConnect() {
             </motion.div>
           </div>
 
-          {/* AI Analysis Note */}
+          {/* AI Career Analysis Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="mt-6 p-4 rounded-xl bg-accent-primary/10 border border-accent-primary/30"
+            className="mt-6 card"
           >
-            <div className="flex items-center gap-3">
-              <Brain className="w-5 h-5 text-accent-primary" />
-              <p className="text-sm text-gray-300">
-                <span className="text-white font-medium">AI Analysis:</span> Click "Analyze" on any repository 
-                to let Ollama LLM evaluate code complexity, identify skills, and assess project difficulty.
-                {!state.llmConnected && (
-                  <span className="text-accent-warning"> (Ollama must be running)</span>
-                )}
-              </p>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <Brain className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  AI Portfolio Analysis
+                  <Sparkles className="w-4 h-4 text-yellow-400" />
+                </h3>
+                <p className="text-sm text-gray-400">Powered by Groq AI</p>
+              </div>
             </div>
+
+            {isAnalyzing ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+                <span className="ml-3 text-gray-400">Analyzing your GitHub profile...</span>
+              </div>
+            ) : aiAnalysis ? (
+              <div className="space-y-6">
+                {/* Developer Level & Portfolio Strength */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/30 text-center">
+                    <Award className="w-8 h-8 text-blue-400 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-white">{aiAnalysis.developerLevel}</p>
+                    <p className="text-xs text-gray-400">Developer Level</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/30 text-center">
+                    <TrendingUp className="w-8 h-8 text-green-400 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-white">{aiAnalysis.portfolioStrength}</p>
+                    <p className="text-xs text-gray-400">Portfolio Strength</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 text-center">
+                    <Users className="w-8 h-8 text-purple-400 mx-auto mb-2" />
+                    <p className="text-2xl font-bold text-white">{aiAnalysis.collaborationScore}</p>
+                    <p className="text-xs text-gray-400">Collaboration Score</p>
+                  </div>
+                </div>
+
+                {/* Primary Skills */}
+                <div className="p-4 rounded-xl bg-dark-700 border border-dark-500">
+                  <h4 className="text-sm font-medium text-cyan-400 mb-3 flex items-center gap-2">
+                    <Code2 className="w-4 h-4" /> Primary Technical Skills
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {aiAnalysis.primarySkills.map((skill, i) => (
+                      <span key={i} className="px-3 py-1 rounded-full bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-300 text-sm border border-cyan-500/30">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Project Complexity & Open Source */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-dark-700 border border-dark-500">
+                    <h4 className="text-sm font-medium text-yellow-400 mb-2">Project Complexity</h4>
+                    <p className="text-white text-lg font-semibold">{aiAnalysis.projectComplexity}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-dark-700 border border-dark-500">
+                    <h4 className="text-sm font-medium text-green-400 mb-2">Open Source Contribution</h4>
+                    <p className="text-gray-300 text-sm">{aiAnalysis.openSourceContribution}</p>
+                  </div>
+                </div>
+
+                {/* Hiring Insights */}
+                <div className="p-4 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30">
+                  <h4 className="text-sm font-medium text-purple-400 mb-2 flex items-center gap-2">
+                    <Target className="w-4 h-4" /> Hiring Manager Insights
+                  </h4>
+                  <p className="text-white">{aiAnalysis.hiringInsights}</p>
+                </div>
+
+                {/* Recommendations */}
+                <div className="p-4 rounded-xl bg-dark-700 border border-dark-500">
+                  <h4 className="text-sm font-medium text-blue-400 mb-3">AI Recommendations to Improve</h4>
+                  <div className="space-y-2">
+                    {aiAnalysis.recommendations.map((rec, i) => (
+                      <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-dark-600">
+                        <span className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-sm font-bold flex-shrink-0">{i + 1}</span>
+                        <span className="text-gray-300 text-sm">{rec}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-400">
+                <Brain className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>AI analysis will appear here after connecting your GitHub profile</p>
+              </div>
+            )}
           </motion.div>
         </>
       )}

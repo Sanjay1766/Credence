@@ -15,6 +15,7 @@ import {
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const DEFAULT_MODEL = 'llama-3.3-70b-versatile'; // Fast & capable
+// API key loaded from environment variable
 
 interface GroqMessage {
   role: 'system' | 'user' | 'assistant';
@@ -506,6 +507,206 @@ Respond with ONLY the JSON object.`;
    */
   setApiKey(apiKey: string): void {
     this.apiKey = apiKey;
+  }
+
+  /**
+   * Analyze LeetCode profile and provide insights
+   */
+  async analyzeLeetCodeProfile(stats: {
+    username: string;
+    totalSolved: number;
+    easySolved: number;
+    mediumSolved: number;
+    hardSolved: number;
+    ranking: number;
+    acceptanceRate: number;
+  }): Promise<{
+    overallAssessment: string;
+    strengthAreas: string[];
+    improvementAreas: string[];
+    readinessLevel: string;
+    recommendations: string[];
+    interviewTips: string[];
+  }> {
+    const prompt = `Analyze this LeetCode profile and provide career insights:
+
+LEETCODE STATS:
+- Username: ${stats.username}
+- Total Problems Solved: ${stats.totalSolved}
+- Easy: ${stats.easySolved} | Medium: ${stats.mediumSolved} | Hard: ${stats.hardSolved}
+- Global Ranking: ${stats.ranking}
+- Acceptance Rate: ${stats.acceptanceRate}%
+
+Provide a JSON response with:
+{
+  "overallAssessment": "2-3 sentence summary of their problem-solving ability",
+  "strengthAreas": ["array of 3-4 strength areas based on their stats"],
+  "improvementAreas": ["array of 2-3 areas to improve"],
+  "readinessLevel": "Beginner|Intermediate|Advanced|Expert for technical interviews",
+  "recommendations": ["array of 3-4 specific actionable recommendations"],
+  "interviewTips": ["array of 3-4 interview preparation tips based on their level"]
+}
+
+Only respond with valid JSON, no markdown or explanation.`;
+
+    try {
+      const response = await this.generate(prompt, { temperature: 0.4, maxTokens: 1500 });
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+      throw new Error('Invalid response format');
+    } catch (error) {
+      console.error('LeetCode analysis failed:', error);
+      return {
+        overallAssessment: 'Unable to analyze profile at this time.',
+        strengthAreas: ['Problem solving', 'Algorithmic thinking'],
+        improvementAreas: ['Continue practicing'],
+        readinessLevel: 'Intermediate',
+        recommendations: ['Keep solving problems daily'],
+        interviewTips: ['Practice explaining your thought process']
+      };
+    }
+  }
+
+  /**
+   * Analyze GitHub profile and repositories
+   */
+  async analyzeGitHubProfile(profile: {
+    username: string;
+    publicRepos: number;
+    followers: number;
+    following: number;
+    bio?: string;
+    repositories: Array<{
+      name: string;
+      description?: string;
+      language?: string;
+      stars: number;
+      forks: number;
+      topics?: string[];
+    }>;
+  }): Promise<{
+    developerLevel: string;
+    primarySkills: string[];
+    projectComplexity: string;
+    collaborationScore: number;
+    openSourceContribution: string;
+    portfolioStrength: string;
+    recommendations: string[];
+    hiringInsights: string;
+  }> {
+    const topRepos = profile.repositories.slice(0, 10).map(r => 
+      `- ${r.name}: ${r.description || 'No description'} (${r.language || 'Unknown'}, ⭐${r.stars}, 🍴${r.forks})`
+    ).join('\n');
+
+    const languages = [...new Set(profile.repositories.map(r => r.language).filter(Boolean))];
+    const totalStars = profile.repositories.reduce((sum, r) => sum + r.stars, 0);
+
+    const prompt = `Analyze this GitHub developer profile:
+
+PROFILE:
+- Username: ${profile.username}
+- Public Repos: ${profile.publicRepos}
+- Followers: ${profile.followers} | Following: ${profile.following}
+- Bio: ${profile.bio || 'Not provided'}
+- Total Stars: ${totalStars}
+- Languages Used: ${languages.join(', ')}
+
+TOP REPOSITORIES:
+${topRepos}
+
+Provide a JSON response:
+{
+  "developerLevel": "Junior|Mid-Level|Senior|Staff based on portfolio",
+  "primarySkills": ["top 5 technical skills evident from repos"],
+  "projectComplexity": "Basic|Intermediate|Advanced|Complex - overall project complexity",
+  "collaborationScore": 0-100 based on community engagement,
+  "openSourceContribution": "assessment of open source involvement",
+  "portfolioStrength": "Weak|Moderate|Strong|Exceptional",
+  "recommendations": ["3-4 recommendations to improve their GitHub presence"],
+  "hiringInsights": "2-3 sentences about this candidate from a hiring perspective"
+}
+
+Only respond with valid JSON.`;
+
+    try {
+      const response = await this.generate(prompt, { temperature: 0.4, maxTokens: 1500 });
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+      throw new Error('Invalid response format');
+    } catch (error) {
+      console.error('GitHub analysis failed:', error);
+      return {
+        developerLevel: 'Mid-Level',
+        primarySkills: languages.filter((l): l is string => l !== undefined).slice(0, 5),
+        projectComplexity: 'Intermediate',
+        collaborationScore: 50,
+        openSourceContribution: 'Some contributions visible',
+        portfolioStrength: 'Moderate',
+        recommendations: ['Add more project descriptions', 'Increase documentation'],
+        hiringInsights: 'Developer with growing portfolio.'
+      };
+    }
+  }
+
+  /**
+   * Generate comprehensive career readiness report
+   */
+  async generateCareerReport(data: {
+    leetcode?: { totalSolved: number; easySolved: number; mediumSolved: number; hardSolved: number; ranking: number };
+    github?: { publicRepos: number; followers: number; languages: string[]; totalStars: number };
+    skills?: string[];
+  }): Promise<{
+    overallScore: number;
+    interviewReadiness: string;
+    marketability: string;
+    topStrengths: string[];
+    developmentPlan: string[];
+    estimatedSalaryRange: string;
+    roleRecommendations: string[];
+  }> {
+    const prompt = `Generate a career readiness report for a developer:
+
+DATA:
+${data.leetcode ? `LeetCode: ${data.leetcode.totalSolved} solved (E:${data.leetcode.easySolved}/M:${data.leetcode.mediumSolved}/H:${data.leetcode.hardSolved}), Rank: ${data.leetcode.ranking}` : 'LeetCode: Not connected'}
+${data.github ? `GitHub: ${data.github.publicRepos} repos, ${data.github.followers} followers, ${data.github.totalStars} stars, Languages: ${data.github.languages.join(', ')}` : 'GitHub: Not connected'}
+${data.skills ? `Skills: ${data.skills.join(', ')}` : ''}
+
+Provide JSON:
+{
+  "overallScore": 0-100 career readiness score,
+  "interviewReadiness": "Not Ready|Preparing|Ready|Highly Prepared",
+  "marketability": "assessment of job market readiness",
+  "topStrengths": ["3-4 key strengths"],
+  "developmentPlan": ["4-5 specific action items for career growth"],
+  "estimatedSalaryRange": "estimated salary range for entry/mid level in tech",
+  "roleRecommendations": ["3-4 job roles that match their profile"]
+}
+
+Only JSON response.`;
+
+    try {
+      const response = await this.generate(prompt, { temperature: 0.5, maxTokens: 1500 });
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+      throw new Error('Invalid response format');
+    } catch (error) {
+      console.error('Career report generation failed:', error);
+      return {
+        overallScore: 65,
+        interviewReadiness: 'Preparing',
+        marketability: 'Growing potential in the job market',
+        topStrengths: ['Problem solving', 'Programming fundamentals'],
+        developmentPlan: ['Continue leetcode practice', 'Build more projects'],
+        estimatedSalaryRange: '$60,000 - $90,000',
+        roleRecommendations: ['Software Engineer', 'Full Stack Developer']
+      };
+    }
   }
 }
 

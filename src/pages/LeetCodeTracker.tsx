@@ -19,6 +19,8 @@ import {
   Loader2,
   AlertCircle,
   ExternalLink,
+  Brain,
+  Sparkles,
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -28,6 +30,16 @@ import {
   Tooltip,
 } from 'recharts';
 import { fetchLeetCodeStats, fetchLeetCodeContestRating, LeetCodeStats } from '../services/leetcodeService';
+import { groqService } from '../services/groqService';
+
+interface AIAnalysis {
+  overallAssessment: string;
+  strengthAreas: string[];
+  improvementAreas: string[];
+  readinessLevel: string;
+  recommendations: string[];
+  interviewTips: string[];
+}
 
 export default function LeetCodeTracker() {
   const { dispatch } = useApp();
@@ -36,6 +48,8 @@ export default function LeetCodeTracker() {
   const [error, setError] = useState<string | null>(null);
   const [leetcodeData, setLeetcodeData] = useState<LeetCodeStats | null>(null);
   const [contestRating, setContestRating] = useState<{ rating: number; globalRanking: number; attendedContests: number } | null>(null);
+  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const handleConnect = async () => {
     if (!username.trim()) {
@@ -70,6 +84,25 @@ export default function LeetCodeTracker() {
           topicCoverage: []
         } 
       });
+
+      // Trigger AI analysis
+      setIsAnalyzing(true);
+      try {
+        const analysis = await groqService.analyzeLeetCodeProfile({
+          username: stats.username,
+          totalSolved: stats.totalSolved,
+          easySolved: stats.easySolved,
+          mediumSolved: stats.mediumSolved,
+          hardSolved: stats.hardSolved,
+          ranking: stats.ranking,
+          acceptanceRate: stats.acceptanceRate
+        });
+        setAiAnalysis(analysis);
+      } catch (analysisError) {
+        console.error('AI analysis failed:', analysisError);
+      } finally {
+        setIsAnalyzing(false);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch LeetCode data');
     } finally {
@@ -415,6 +448,108 @@ export default function LeetCodeTracker() {
                 <p className="text-3xl font-bold gradient-text">{Math.round((stats.hardSolved / stats.totalSolved) * 100)}%</p>
               </div>
             </div>
+          </motion.div>
+
+          {/* AI Analysis Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="mt-6 card"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                <Brain className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                  AI Career Analysis
+                  <Sparkles className="w-4 h-4 text-yellow-400" />
+                </h3>
+                <p className="text-sm text-gray-400">Powered by Groq AI</p>
+              </div>
+            </div>
+
+            {isAnalyzing ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+                <span className="ml-3 text-gray-400">Analyzing your profile...</span>
+              </div>
+            ) : aiAnalysis ? (
+              <div className="space-y-6">
+                {/* Overall Assessment */}
+                <div className="p-4 rounded-xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30">
+                  <h4 className="text-sm font-medium text-purple-400 mb-2">Overall Assessment</h4>
+                  <p className="text-white">{aiAnalysis.overallAssessment}</p>
+                  <div className="mt-3 inline-flex items-center px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-sm">
+                    Interview Readiness: {aiAnalysis.readinessLevel}
+                  </div>
+                </div>
+
+                {/* Strengths & Improvements */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-dark-700 border border-dark-500">
+                    <h4 className="text-sm font-medium text-green-400 mb-3 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" /> Strength Areas
+                    </h4>
+                    <ul className="space-y-2">
+                      {aiAnalysis.strengthAreas.map((strength, i) => (
+                        <li key={i} className="text-gray-300 text-sm flex items-start gap-2">
+                          <span className="text-green-400 mt-1">•</span>
+                          {strength}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="p-4 rounded-xl bg-dark-700 border border-dark-500">
+                    <h4 className="text-sm font-medium text-yellow-400 mb-3 flex items-center gap-2">
+                      <Target className="w-4 h-4" /> Areas to Improve
+                    </h4>
+                    <ul className="space-y-2">
+                      {aiAnalysis.improvementAreas.map((area, i) => (
+                        <li key={i} className="text-gray-300 text-sm flex items-start gap-2">
+                          <span className="text-yellow-400 mt-1">•</span>
+                          {area}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Recommendations */}
+                <div className="p-4 rounded-xl bg-dark-700 border border-dark-500">
+                  <h4 className="text-sm font-medium text-blue-400 mb-3">AI Recommendations</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {aiAnalysis.recommendations.map((rec, i) => (
+                      <div key={i} className="flex items-start gap-2 p-3 rounded-lg bg-dark-600">
+                        <span className="text-blue-400 font-bold">{i + 1}.</span>
+                        <span className="text-gray-300 text-sm">{rec}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Interview Tips */}
+                <div className="p-4 rounded-xl bg-gradient-to-r from-orange-500/10 to-yellow-500/10 border border-orange-500/30">
+                  <h4 className="text-sm font-medium text-orange-400 mb-3 flex items-center gap-2">
+                    <Flame className="w-4 h-4" /> Interview Preparation Tips
+                  </h4>
+                  <div className="space-y-2">
+                    {aiAnalysis.interviewTips.map((tip, i) => (
+                      <p key={i} className="text-gray-300 text-sm flex items-start gap-2">
+                        <Zap className="w-4 h-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                        {tip}
+                      </p>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-400">
+                <Brain className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>AI analysis will appear here after connecting your profile</p>
+              </div>
+            )}
           </motion.div>
         </>
       )}

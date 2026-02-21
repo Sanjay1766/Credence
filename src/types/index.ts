@@ -203,6 +203,7 @@ export interface SkillSnapshot {
 export interface GitHubProfile {
   username: string;
   avatarUrl: string;
+  bio?: string;
   publicRepos: number;
   followers: number;
   following: number;
