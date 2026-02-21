@@ -5,8 +5,8 @@
 
 import { GitHubProfile, GitHubRepository } from '../types';
 
-// Store token in memory (user provides via UI)
-let githubToken: string | null = null;
+// Store token in memory - uses env var or user provides via UI
+let githubToken: string | null = import.meta.env.VITE_GITHUB_TOKEN || null;
 
 export function setGitHubToken(token: string) {
   githubToken = token;
@@ -136,43 +136,48 @@ export async function fetchContributionCount(username: string): Promise<number> 
 
 // Main function to fetch complete GitHub profile
 export async function fetchGitHubProfile(username: string): Promise<GitHubProfile> {
-  // Fetch user data and repos in parallel
-  const [userData, reposData] = await Promise.all([
-    fetchGitHubUser(username),
-    fetchGitHubRepos(username)
-  ]);
+  try {
+    // Fetch user data and repos in parallel
+    const [userData, reposData] = await Promise.all([
+      fetchGitHubUser(username),
+      fetchGitHubRepos(username)
+    ]);
+    
+    // Get contribution estimate
+    const contributions = await fetchContributionCount(username);
   
-  // Get contribution estimate
-  const contributions = await fetchContributionCount(username);
+    // Calculate top languages
+    const topLanguages = calculateLanguagePercentages(reposData);
   
-  // Calculate top languages
-  const topLanguages = calculateLanguagePercentages(reposData);
+    // Transform repos to our format (exclude forks, take top 10)
+    const repositories: GitHubRepository[] = reposData
+      .filter(repo => !repo.fork)
+      .slice(0, 10)
+      .map(repo => ({
+        id: repo.id.toString(),
+        name: repo.name,
+        description: repo.description || 'No description',
+        language: repo.language || 'Unknown',
+        stars: repo.stargazers_count,
+        forks: repo.forks_count,
+        url: repo.html_url,
+        isAnalyzed: false,
+        lastCommit: new Date(repo.pushed_at)
+      }));
   
-  // Transform repos to our format (exclude forks, take top 10)
-  const repositories: GitHubRepository[] = reposData
-    .filter(repo => !repo.fork)
-    .slice(0, 10)
-    .map(repo => ({
-      id: repo.id.toString(),
-      name: repo.name,
-      description: repo.description || 'No description',
-      language: repo.language || 'Unknown',
-      stars: repo.stargazers_count,
-      forks: repo.forks_count,
-      url: repo.html_url,
-      isAnalyzed: false,
-      lastCommit: new Date(repo.pushed_at)
-    }));
-  
-  return {
-    username: userData.login,
-    avatarUrl: userData.avatar_url,
-    bio: userData.bio || undefined,
-    publicRepos: userData.public_repos,
-    followers: userData.followers,
-    following: userData.following,
-    contributions: contributions || Math.floor(userData.public_repos * 15),
-    topLanguages,
-    repositories
-  };
+    return {
+      username: userData.login,
+      avatarUrl: userData.avatar_url,
+      bio: userData.bio || undefined,
+      publicRepos: userData.public_repos,
+      followers: userData.followers,
+      following: userData.following,
+      contributions: contributions || Math.floor(userData.public_repos * 15),
+      topLanguages,
+      repositories
+    };
+  } catch (error) {
+    console.error('GitHub API error:', error);
+    throw error;
+  }
 }

@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Github, GraduationCap, Building2, Briefcase } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Github, GraduationCap, Building2, Briefcase } from 'lucide-react';
 
 type UserRole = 'student' | 'institution' | 'hiring' | null;
 
@@ -64,13 +64,19 @@ export default function Login() {
     // Simulate login - Replace with actual authentication
     setTimeout(() => {
       if (email && password) {
-        // Demo user for testing
+        // Extract name from email (e.g., sanjay.srivatsav@email.com -> Sanjay Srivatsav)
+        const emailName = email.split('@')[0];
+        const fullName = emailName
+          .split(/[._-]/)
+          .map(part => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+          .join(' ');
+        
         dispatch({
           type: 'SET_USER',
           payload: {
             id: '1',
             email: email,
-            fullName: 'Demo User',
+            fullName: fullName,
             role: selectedRole || 'student',
             createdAt: new Date(),
             onboardingComplete: false,
@@ -80,13 +86,13 @@ export default function Login() {
         
         // Navigate based on role
         if (selectedRole === 'student') {
-          navigate('/onboarding');
+          navigate('/dashboard');
         } else if (selectedRole === 'institution') {
           navigate('/institution/dashboard');
         } else if (selectedRole === 'hiring') {
           navigate('/hiring/dashboard');
         } else {
-          navigate('/onboarding');
+          navigate('/dashboard');
         }
       } else {
         setError('Please enter your credentials');
@@ -105,59 +111,20 @@ export default function Login() {
   const selectedRoleData = roleOptions.find(r => r.id === selectedRole);
 
   return (
-    <div className="min-h-screen bg-dark-900 bg-grid flex">
-      {/* Left Section - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-accent-primary/20 via-accent-secondary/10 to-transparent" />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-accent-primary/30 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-accent-secondary/20 rounded-full blur-3xl" />
-        
-        <div className="relative z-10 flex flex-col justify-center px-16">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-accent-primary via-accent-secondary to-accent-tertiary flex items-center justify-center">
-              <Zap className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-3xl font-bold gradient-text">Credense</span>
-          </div>
-          
-          <AnimatePresence mode="wait">
-            {selectedRole ? (
-              <motion.div
-                key="role-info"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-              >
-                <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
-                  {selectedRoleData?.title}
-                </h1>
-                <p className="text-gray-400 text-lg max-w-md">
-                  {selectedRoleData?.description}
-                </p>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="welcome"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-              >
-                <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
-                  Welcome to
-                  <br />
-                  <span className="gradient-text">Credense Platform</span>
-                </h1>
-                <p className="text-gray-400 text-lg max-w-md">
-                  The future of skill verification. Choose your path and get started.
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
+    <div className="min-h-screen bg-dark-900 bg-grid flex flex-col items-center justify-center p-8">
+      {/* Centered Content Container */}
+      <div className="w-full max-w-lg">
+        {/* Logo & Branding - Always Centered */}
+        <div className="text-center mb-10">
+          <h1 className="text-5xl font-bold text-white mb-4">Credense</h1>
+          <p className="text-lg text-gray-400 mb-2">
+            The future of skill verification and Hiring
+          </p>
+          <p className="text-gray-500">
+            Choose your path and get started
+          </p>
         </div>
-      </div>
 
-      {/* Right Section - Role Selection or Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
         <AnimatePresence mode="wait">
           {!selectedRole ? (
             // Role Selection View
@@ -166,21 +133,7 @@ export default function Login() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="w-full max-w-lg"
             >
-              {/* Mobile Logo */}
-              <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-primary to-accent-secondary flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-2xl font-bold gradient-text">Credense</span>
-              </div>
-
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-white mb-2">Get Started</h2>
-                <p className="text-gray-400">Choose how you want to use Credense</p>
-              </div>
-
               <div className="space-y-4">
                 {roleOptions.map((role, index) => (
                   <motion.button
@@ -223,16 +176,8 @@ export default function Login() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="w-full max-w-md"
+              className="w-full"
             >
-              {/* Mobile Logo */}
-              <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-accent-primary to-accent-secondary flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-2xl font-bold gradient-text">Credense</span>
-              </div>
-
               <div className="card p-8">
                 {/* Back Button */}
                 <button
@@ -260,8 +205,8 @@ export default function Login() {
                   </div>
                 </div>
 
-                <h2 className="text-2xl font-bold text-white mb-2">Sign In</h2>
-                <p className="text-gray-400 mb-8">Enter your credentials to continue</p>
+                <h2 className="text-2xl font-bold text-white mb-2 text-center">Sign In</h2>
+                <p className="text-gray-400 mb-8 text-center">Enter your credentials to continue</p>
 
                 {error && (
                   <div className="mb-6 p-4 rounded-xl bg-accent-danger/10 border border-accent-danger/30 text-accent-danger text-sm">
